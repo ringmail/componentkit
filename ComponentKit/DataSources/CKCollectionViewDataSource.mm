@@ -82,7 +82,12 @@ CK_FINAL_CLASS([CKCollectionViewDataSource class]);
 
 - (void)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize
 {
-  [_componentDataSource enqueueChangeset:changeset constrainedSize:constrainedSize];
+	[self enqueueChangeset:changeset constrainedSize:constrainedSize complete:nil];
+}
+
+- (void)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize complete:(void (^)(BOOL))complete
+{
+  [_componentDataSource enqueueChangeset:changeset constrainedSize:constrainedSize complete:complete];
 }
 
 - (void)updateContextAndEnqueueReload:(id)newContext
@@ -175,11 +180,12 @@ static NSString *const kReuseIdentifier = @"com.component_kit.collection_view_da
 - (void)componentDataSource:(CKComponentDataSource *)componentDataSource
           hasChangesOfTypes:(CKComponentDataSourceChangeType)changeTypes
         changesetApplicator:(ck_changeset_applicator_t)changesetApplicator
+		           complete:(void (^)(BOOL))complete
 {
   [_collectionView performBatchUpdates:^{
     const auto &changeset = changesetApplicator();
     applyChangesetToCollectionView(changeset, _collectionView);
-  } completion:nil];
+  } completion:complete];
 }
 
 - (void)componentDataSource:(CKComponentDataSource *)componentDataSource

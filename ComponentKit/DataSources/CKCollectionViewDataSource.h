@@ -71,6 +71,10 @@ typedef void(*CKCellConfigurationFunction)(UICollectionViewCell *cell, NSIndexPa
 - (void)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset
          constrainedSize:(const CKSizeRange &)constrainedSize;
 
+- (void)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset
+         constrainedSize:(const CKSizeRange &)constrainedSize
+		 		complete:(void (^)(BOOL))complete;
+
 /**
  Updates context to the new value and enqueues update changeset in order to rebuild component tree.
  */

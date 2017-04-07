@@ -35,7 +35,8 @@ typedef NS_OPTIONS(NSUInteger, CKComponentDataSourceChangeType) {
  */
 - (void)componentDataSource:(CKComponentDataSource *)componentDataSource
           hasChangesOfTypes:(CKComponentDataSourceChangeType)changeTypes
-        changesetApplicator:(ck_changeset_applicator_t)changesetApplicator;
+        changesetApplicator:(ck_changeset_applicator_t)changesetApplicator
+				   complete:(void (^)(BOOL))complete;
 
 /**
  Sent when the size of a given component has changed due to a state update (versus a model change).

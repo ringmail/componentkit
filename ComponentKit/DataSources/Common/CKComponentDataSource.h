@@ -63,6 +63,8 @@ class CKComponentBoundsAnimation;
 
 - (PreparationBatchID)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize;
 
+- (PreparationBatchID)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize complete:(void (^)(BOOL))complete;
+
 /**
  Generates a changeset of update() commands for each object in the data source. The changeset is then enqueued and
  processed asynchronously as normal.

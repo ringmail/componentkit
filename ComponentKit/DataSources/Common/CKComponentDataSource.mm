@@ -165,7 +165,7 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
     items.update(indexPath, object);
   }];
   CKArrayControllerInputChangeset changeset(items);
-  [self _enqueueChangeset:changeset];
+  [self _enqueueChangeset:changeset complete:nil];
 }
 
 - (void)updateContextAndEnqueueReload:(id)newContext
@@ -184,7 +184,13 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
 
  Therefore we wrap each item given to us.
  */
+
 - (PreparationBatchID)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize
+{
+	return [self enqueueChangeset:changeset constrainedSize:constrainedSize complete:nil];
+}
+ 
+- (PreparationBatchID)enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset constrainedSize:(const CKSizeRange &)constrainedSize complete:(void (^)(BOOL))complete
 {
   __block CKArrayControllerInputItems newItems;
   changeset.items.enumerateItems(^(NSInteger section, NSInteger index, id<NSObject> object, BOOL *stop) {
@@ -209,10 +215,10 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
     newItems.move(fromIndexPath, toIndexPath);
   });
 
-  return [self _enqueueChangeset:{changeset.sections, newItems}];
+  return [self _enqueueChangeset:{changeset.sections, newItems} complete:complete];
 }
 
-- (PreparationBatchID)_enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset
+- (PreparationBatchID)_enqueueChangeset:(const CKArrayControllerInputChangeset &)changeset complete:(void (^)(BOOL))complete
 {
   auto output = [_inputArrayController applyChangeset:changeset];
 
@@ -249,7 +255,8 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
                                        CKInternalConsistencyCheckIf(_operationsInPreparationQueueTracker.front() == ID, @"Batches were executed out of order some were dropped on the floor.");
                                        _operationsInPreparationQueueTracker.pop();
                                        [self _componentPreparationQueueDidPrepareBatch:outputBatch
-                                                                              sections:sections];
+                                                                              sections:sections
+																			  complete:complete];
                                      }];
   return preparationQueueBatch.ID;
 }
@@ -276,6 +283,7 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
 
 - (void)_componentPreparationQueueDidPrepareBatch:(NSArray *)batch
                                          sections:(const CKArrayControllerSections &)sections
+										 complete:(void (^)(BOOL))complete
 {
   CKAssertMainThread();
 
@@ -304,7 +312,7 @@ CK_FINAL_CLASS([CKComponentDataSource class]);
         break;
     }
   }
-  [self _processChangeset:{sections, items}];
+  [self _processChangeset:{sections, items} complete:complete];
 }
 
 
@@ -322,7 +330,7 @@ static CKComponentDataSourceOutputItem *_outputItemFromPreparationOutputItem(CKC
                                                                       UUID:[item UUID]];
 }
 
-- (void)_processChangeset:(const CKArrayControllerInputChangeset &)changeset
+- (void)_processChangeset:(const CKArrayControllerInputChangeset &)changeset complete:(void (^)(BOOL))complete
 {
   __block CKArrayControllerInputItems newItems;
   __block CKComponentDataSourceChangeType changeTypes = 0;
@@ -351,7 +359,8 @@ static CKComponentDataSourceOutputItem *_outputItemFromPreparationOutputItem(CKC
                hasChangesOfTypes:changeTypes
              changesetApplicator:^{
                return [_outputArrayController applyChangeset:{changeset.sections, newItems}];
-             }];
+             }
+			 complete:complete];
 }
 
 #pragma mark - CKComponentLifecycleManagerDelegate
@@ -389,7 +398,7 @@ static CKComponentDataSourceOutputItem *_outputItemFromPreparationOutputItem(CKC
   if (itemToUpdate.first && itemToUpdate.second ) {
     CKArrayControllerInputItems items;
     items.update(itemToUpdate.second, itemToUpdate.first);
-    [self _enqueueChangeset:{items}];
+    [self _enqueueChangeset:{items} complete:nil];
   }
 }
 
